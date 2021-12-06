@@ -27,18 +27,18 @@ kuberef_namespace_list:
 results_path: /tmp/
 results_filename: results.json
 
-PDF_FILE: PDF_FILE.json
+PDF_FILE: /home/sridhar/kubeval/conf/PDF_FILE.json
 
 #############
 # Airship arguments
 #############
 
 # Path to kube-config file
-KUBE_CONFIG : ~/kubeval/conf/pod18.config
+KUBE_CONFIG : /home/sridhar/kubeval/conf/pod18.config
 
 
 MASTER_ROLE_NAME : masters
 WORKER_ROLE_NAME : workers
 
 
-test_suite: default  
+test_suite: default 

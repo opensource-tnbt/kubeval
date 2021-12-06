@@ -3,6 +3,7 @@ CNI Plugin Check
 Multi-interface CNI Check
 """
 
+import os
 import time
 import logging
 from kubernetes import client
@@ -14,6 +15,12 @@ def create_daemonset(apps_instance):
     """
     Creates daemonset for the checks
     """
+    api_instance = kube_api()
+    pod_details = api_instance.list_namespaced_pod('default', watch=False)
+    pods = pod_details.items
+    for pod in pods:
+        if 'plugin-check-test-set' in pod.metadata.name:
+            return
     manifest = {
         'apiVersion': 'apps/v1',
         'kind': 'DaemonSet',
@@ -32,38 +39,38 @@ def create_daemonset(apps_instance):
                     'labels': {
                         'name': 'alpine'
                     }
-                }
-            },
-            'spec': {
-                'containers': [{
-                    'name': 'alpine',
-                    'image': 'alpine:3.2',
-                    'command': ["sh", "-c", "echo \"Hello K8s\" && sleep 3600"],
-                    'volumeMounts': [{
+                },
+                'spec': {
+                    'containers': [{
+                        'name': 'alpine',
+                        'image': 'alpine:3.2',
+                        'command': ["sh", "-c", "echo \"Hello K8s\" && sleep 3600"],
+                        'volumeMounts': [{
+                            'name': 'etccni',
+                            'mountPath': '/etc/cni'
+                        }, {
+                            'name': 'optcnibin',
+                            'mountPath': '/opt/cni/bin',
+                            'readOnly': True
+                        }]
+                    }],
+                    'volumes': [{
                         'name': 'etccni',
-                        'mountPath': '/etc/cni'
+                        'hostPath': {
+                            'path': '/etc/cni'
+                        }
                     }, {
                         'name': 'optcnibin',
-                        'mountPath': '/opt/cni/bin',
-                        'readOnly': True
+                        'hostPath': {
+                            'path': '/opt/cni/bin'
+                        }
+                    }],
+                    'tolerations': [{
+                        'effect': 'NoSchedule',
+                        'key': 'node-role.kubernetes.io/master',
+                        'operator': 'Exists'
                     }]
-                }],
-                'volumes': [{
-                    'name': 'etccni',
-                    'hostPath': {
-                        'path': '/etc/cni'
-                    }
-                }, {
-                    'name': 'optcnibin',
-                    'hostPath': {
-                        'path': '/opt/cni/bin'
-                    }
-                }],
-                'tolerations': [{
-                    'effect': 'NoSchedule',
-                    'key': 'node-role.kubernetes.io/master',
-                    'operator': 'Exists'
-                }]
+                }
             }
         }
     }
@@ -95,8 +102,8 @@ def multi_interface_cni_check():
         if 'plugin-check-test-set' in pod.metadata.name:
             list_of_plugin_conf = kube_exec(pod, cmd)
             list_of_plugin_conf = list_of_plugin_conf.split("\n")
-
-            cmd3 = ['cat', list_of_plugin_conf[0]]
+            filename = os.path.join('/etc/cni/net.d', list_of_plugin_conf[0])
+            cmd3 = ['cat', filename]
             multi_interface_conf = kube_exec(pod, cmd3)
 
             if 'multus' not in multi_interface_conf:
@@ -105,7 +112,7 @@ def multi_interface_cni_check():
             status.append(list_of_plugin_conf)
             status.append(multi_interface_conf)
 
-    apps_instance.delete_namespaced_daemon_set('plugin-check-test-set', 'default')
+    # apps_instance.delete_namespaced_daemon_set('plugin-check-test-set', 'default')
     result['details'].append(status)
     store_result(logger, result)
     return result

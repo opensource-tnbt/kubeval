@@ -21,6 +21,7 @@ Kubernetes cluster api helper functions
 import time
 
 from kubernetes import client, config
+from kubernetes.client.rest import ApiException
 from kubernetes.stream import stream
 
 from conf import settings    # pylint: disable=import-error
@@ -63,9 +64,12 @@ def kube_exec(pod, cmd):
     :return: response from pod
     """
     api = kube_api()
-    response = stream(api.connect_get_namespaced_pod_exec,
-                      pod.metadata.name, pod.metadata.namespace, command=cmd,
-                      stderr=True, stdin=False, stdout=True, tty=False)
+    try:
+        response = stream(api.connect_get_namespaced_pod_exec,
+                          pod.metadata.name, pod.metadata.namespace, command=cmd,
+                          stderr=True, stdin=False, stdout=True, tty=False)
+    except ApiException as error:
+        print("Exception when calling an API: %s\n" % error)
     return response
 
 
