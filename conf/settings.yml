@@ -1,0 +1,44 @@
+project_name: cirv-sdv
+project_version: 1.0
+
+# Logging
+log_filename: kubernetes-validation.log
+log_verbosity: info
+
+# Results
+results_dir: /tmp/
+save_results_locally: True
+
+# Test API
+enable_testapi: False
+testapi_url: http://testresults.opnfv.org/test/api/v1
+
+#####################
+## Kuberef
+######################
+
+# Default Kuberef namespace list
+# list all kubernetes namespace that have Kuberef components
+kuberef_namespace_list:
+  - monitoring
+  - kube-system
+
+# Note all paths must end with '/'
+results_path: /tmp/
+results_filename: results.json
+
+PDF_FILE: PDF_FILE.json
+
+#############
+# Airship arguments
+#############
+
+# Path to kube-config file
+KUBE_CONFIG : ~/kubeval/conf/pod18.config
+
+
+MASTER_ROLE_NAME : masters
+WORKER_ROLE_NAME : workers
+
+
+test_suite: default  
